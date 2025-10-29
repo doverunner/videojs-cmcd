@@ -4,7 +4,40 @@
 A [video.js][videojs] plugin for adding Common-Media-Client-Data (CMCD) to the player requests.
 
 > **_NOTE:_**  This plugin only works for VideoJs 8.4.0 and above.
-  
+
+## CMCD v2 Support
+
+This plugin now supports **CMCD v2** with advanced features including:
+
+- **Response Mode**: Collect metrics after HTTP responses (Time to First Byte, Response Codes, etc.)
+- **Event Mode**: Report player events and state changes
+- **Multiple Transmission Modes**: JSON batching, Query parameters, HTTP headers
+- **Flexible Targeting**: Configure multiple reporting endpoints with different settings
+
+### Quick Start with CMCD v2
+
+```javascript
+player.cmcd({
+  version: 2,
+  sid: 'session-id',
+  cid: 'content-id',
+  targets: [
+    {
+      mode: 'response',
+      url: 'https://your-server.com/cmcd/response',
+      transmissionMode: 'json',
+      batchSize: 5
+    },
+    {
+      mode: 'event',
+      url: 'https://your-server.com/cmcd/events',
+      transmissionMode: 'query',
+      timeInterval: 10
+    }
+  ]
+});
+```
+
 ## Content
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -137,7 +170,7 @@ npm  i  @montevideo-tech/videojs-cmcd
 
 ```
 
-  
+
 ### Usage
 
 To use the plug-in, instance the player and then initialize it.

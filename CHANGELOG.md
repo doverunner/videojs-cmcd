@@ -1,3 +1,28 @@
+<a name="2.0.0"></a>
+## 2.0.0 (2024-09-30)
+
+### Features
+
+* **CMCD v2 Support**: Add complete CMCD v2 implementation with Response Mode and Event Mode
+* **Response Mode**: Collect network timing metrics (TTFB, TTLB, Response Codes) after HTTP responses
+* **Event Mode**: Report player events and state changes in real-time
+* **Multiple Transmission Modes**: Support JSON batching, Query parameters, and HTTP headers
+* **Flexible Targeting**: Configure multiple reporting endpoints with different settings
+* **Advanced Metrics**: New v2 metrics including timestamps, playhead time, live latency, player state, media start delay, dropped frames, and sequence numbers
+* **Backward Compatibility**: Full compatibility with existing v1 configurations
+
+### Breaking Changes
+
+* Minimum required version updated to support v2 features
+* Configuration structure extended for v2 targets (v1 configs still supported)
+
+### Files Added
+
+* `src/CmcdV2Data.js`: v2 metrics collection and formatting
+* `src/ResponseModeController.js`: HTTP response monitoring and reporting
+* `src/EventModeController.js`: Player event monitoring and reporting
+* `cmcd-v2-example.html`: Complete v2 usage example
+
 <a name="1.0.8"></a>
 ## 1.0.8 (2023-07-19)
 

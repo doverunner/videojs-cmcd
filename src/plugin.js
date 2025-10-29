@@ -4,6 +4,9 @@ import { uuid } from '@svta/common-media-library/utils/uuid';
 import videojs from 'video.js';
 import { version as VERSION } from '../package.json';
 import { CmcdData } from './CmcdData.js';
+import { CmcdV2Data } from './CmcdV2Data.js';
+import { ResponseModeController } from './ResponseModeController.js';
+import { EventModeController } from './EventModeController.js';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -36,43 +39,77 @@ class Cmcd extends Plugin {
     // the parent class will add player under this.player
     super(player);
     this.options = videojs.obj.merge(defaults, options);
-    const {sid, cid, useHeaders} = options || {};
+    const {sid, cid, useHeaders, version = 1, targets} = options || {};
 
     this.cid = cid;
     this.sid = sid || uuid();
     this.useHeaders = useHeaders;
+    this.version = version;
+    this.targets = targets || [];
+
+    // V2 controllers
+    this.responseModeController = null;
+    this.eventModeController = null;
 
     this.player.ready(() => {
       player.addClass('vjs-cmcd');
 
-      handleEvents(player);
-
-      player.on('xhr-hooks-ready', () => {
-
-        const playerXhrRequestHook = (opts) => {
-          const cmcd = new CmcdData(this.player, this.sid, this.cid);
-          const keys = cmcd.getKeys(opts.uri, isWaitingEvent, this.player.currentSrc());
-
-          if (this.useHeaders) {
-            const headers = appendCmcdHeaders({}, keys);
-
-            opts.beforeSend = (xhr) => {
-              for (const h in headers) {
-                xhr.setRequestHeader(h, headers[h]);
-              }
-            };
-          } else {
-            opts.uri = appendCmcdQuery(opts.uri, keys);
-          }
-
-          return opts;
-        };
-
-        player.tech().vhs.xhr.onRequest(playerXhrRequestHook);
-      });
-
+      if (this.version === 2) {
+        this.initializeV2(player);
+      } else {
+        this.initializeV1(player);
+      }
     });
+  }
 
+  initializeV1(player) {
+    handleEvents(player);
+
+    player.on('xhr-hooks-ready', () => {
+
+      const playerXhrRequestHook = (opts) => {
+        const cmcd = new CmcdData(this.player, this.sid, this.cid);
+        const keys = cmcd.getKeys(opts.uri, isWaitingEvent, this.player.currentSrc());
+
+        if (this.useHeaders) {
+          const headers = appendCmcdHeaders({}, keys);
+
+          opts.beforeSend = (xhr) => {
+            for (const h in headers) {
+              xhr.setRequestHeader(h, headers[h]);
+            }
+          };
+        } else {
+          opts.uri = appendCmcdQuery(opts.uri, keys);
+        }
+
+        return opts;
+      };
+
+      player.tech().vhs.xhr.onRequest(playerXhrRequestHook);
+    });
+  }
+
+  initializeV2(player) {
+    const cmcdV2Data = new CmcdV2Data(player, this.sid, this.cid);
+
+    // Initialize Response Mode Controller
+    const responseModeTargets = this.targets.filter(target => target.mode === 'response');
+    if (responseModeTargets.length > 0) {
+      this.responseModeController = new ResponseModeController(player, cmcdV2Data, responseModeTargets);
+    }
+
+    // Initialize Event Mode Controller
+    const eventModeTargets = this.targets.filter(target => target.mode === 'event');
+    if (eventModeTargets.length > 0) {
+      this.eventModeController = new EventModeController(player, cmcdV2Data, eventModeTargets);
+    }
+
+    // Keep v1 request mode for backward compatibility
+    const requestModeTargets = this.targets.filter(target => target.mode === 'request' || !target.mode);
+    if (requestModeTargets.length > 0 || this.targets.length === 0) {
+      this.initializeV1(player);
+    }
   }
 
   setId(id) {
@@ -82,6 +119,31 @@ class Cmcd extends Plugin {
     if (id.cid) {
       this.cid = id.cid;
     }
+  }
+
+  getId() {
+    return {
+      sid: this.sid,
+      cid: this.cid
+    };
+  }
+
+  getSessionId() {
+    return this.sid;
+  }
+
+  destroy() {
+    if (this.responseModeController) {
+      this.responseModeController.destroy();
+      this.responseModeController = null;
+    }
+
+    if (this.eventModeController) {
+      this.eventModeController.destroy();
+      this.eventModeController = null;
+    }
+
+    super.destroy();
   }
 
 }

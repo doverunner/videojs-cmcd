@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Video.js CMCD v2 Example</title>
+    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet">
+    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+    <script src="dist/videojs-cmcd.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .video-container {
+            margin-bottom: 20px;
+        }
+        .config-example {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-left: 5px solid #007acc;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Video.js CMCD v2 Plugin Example</h1>
+
+    <div class="info-box">
+        <h3>🚀 CMCD v2 Features Demonstrated:</h3>
+        <ul>
+            <li><strong>Response Mode:</strong> Collects metrics after HTTP responses (TTFB, TTLB, Response Code, etc.)</li>
+            <li><strong>Event Mode:</strong> Reports on player events (play, pause, error, etc.)</li>
+            <li><strong>Multiple Transmission Modes:</strong> JSON batch, Query parameters, HTTP headers</li>
+            <li><strong>Flexible Targeting:</strong> Multiple endpoints with different configurations</li>
+        </ul>
+    </div>
+
+    <div class="video-container">
+        <video
+            id="my-video"
+            class="video-js vjs-default-skin"
+            controls
+            preload="auto"
+            width="640"
+            height="360"
+            data-setup="{}">
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+            <p class="vjs-no-js">
+                To view this video please enable JavaScript, and consider upgrading to a web browser that
+                <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>.
+            </p>
+        </video>
+    </div>
+
+    <div class="config-example">
+        <h3>CMCD v2 Configuration Used:</h3>
+        <pre><code>var player = videojs('my-video');
+
+player.cmcd({
+    version: 2,
+    sid: 'session-12345',
+    cid: 'content-67890',
+    targets: [
+        // Response Mode - JSON Batch
+        {
+            mode: 'response',
+            url: 'http://localhost:3001/cmcd/response',
+            transmissionMode: 'json',
+            batchSize: 3,
+            enabledKeys: ['ts', 'ttfb', 'ttlb', 'rc', 'url', 'pt'],
+            includeOnRequests: ['segment', 'manifest']
+        },
+
+        // Event Mode - Query String
+        {
+            mode: 'event',
+            url: 'http://localhost:3002/cmcd/event',
+            transmissionMode: 'query',
+            timeInterval: 5, // seconds
+            enabledKeys: ['ts', 'e', 'sta', 'pt', 'pr'],
+            events: ['ps', 'e', 't'] // playback state, error, time
+        },
+
+        // Event Mode - HTTP Headers
+        {
+            mode: 'event',
+            url: 'http://localhost:3003/cmcd/event-headers',
+            transmissionMode: 'header',
+            enabledKeys: ['ts', 'e', 'sta', 'msd', 'df'],
+            events: ['ps', 'e']
+        }
+    ]
+});</code></pre>
+    </div>
+
+    <div class="info-box">
+        <h3>📊 What's Being Reported:</h3>
+        <ul>
+            <li><strong>Response Mode:</strong> Network timing data for each segment/manifest request</li>
+            <li><strong>Event Mode (Query):</strong> Player state changes every 5 seconds + events</li>
+            <li><strong>Event Mode (Headers):</strong> Critical events like play/pause/error</li>
+        </ul>
+        <p><strong>Note:</strong> Make sure your CMCD collection endpoints are running on the specified ports to see the data flow.</p>
+    </div>
+
+    <script>
+        // Initialize Video.js player
+        var player = videojs('my-video');
+
+        // Configure CMCD v2 plugin
+        player.cmcd({
+            version: 2,
+            sid: 'session-12345',
+            cid: 'content-67890',
+            targets: [
+                // Response Mode - JSON Batch
+                // {
+                //     mode: 'response',
+                //     url: 'http://localhost:3000/cmcd/response',
+                //     transmissionMode: 'json',
+                //     batchSize: 3,
+                //     enabledKeys: ['ts', 'ttfb', 'ttlb', 'rc', 'url', 'pt'],
+                //     includeOnRequests: ['segment', 'manifest']
+                // },
+
+                // Event Mode - Query String
+                {
+                    mode: 'event',
+                    url: 'http://localhost:3000/cmcd/event-mode',
+                    transmissionMode: 'query',
+                    timeInterval: 5, // seconds
+                    enabledKeys: ['ts', 'e', 'sta', 'pt', 'pr'],
+                    events: ['ps', 'e', 't'] // playback state, error, time
+                },
+
+                // Event Mode - HTTP Headers
+                // {
+                //     mode: 'event',
+                //     url: 'http://localhost:3000/cmcd/event-headers',
+                //     transmissionMode: 'header',
+                //     enabledKeys: ['ts', 'e', 'sta', 'msd', 'df'],
+                //     events: ['ps', 'e']
+                // }
+            ]
+        });
+
+        // Log when player is ready
+        player.ready(function() {
+            console.log('Video.js player with CMCD v2 is ready!');
+            console.log('CMCD v2 Response Mode: Enabled for segments and manifests');
+            console.log('CMCD v2 Event Mode: Enabled for player events and time intervals');
+            console.log('Check your collection endpoints for incoming CMCD data...');
+        });
+
+        // Add some event listeners for demonstration
+        player.on('play', function() {
+            console.log('▶️ Player started playing - CMCD event mode will report this');
+        });
+
+        player.on('pause', function() {
+            console.log('⏸️ Player paused - CMCD event mode will report this');
+        });
+
+        player.on('error', function(event) {
+            console.log('❌ Player error - CMCD event mode will report this:', event);
+        });
+    </script>
+</body>
+</html>
